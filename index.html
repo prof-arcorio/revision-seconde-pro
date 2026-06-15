@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Banc de révision — Vers la Première</title>
+<style>
+/* ============================================================
+   PARAMÈTRES MODIFIABLES PAR L'ENSEIGNANT
+   - Pour changer le code de redémarrage : voir la constante
+     CODE_RESET dans le <script> en bas du fichier.
+   ============================================================ */
+
+:root{
+  --bg:#0e1419;
+  --panel:#151d25;
+  --panel-2:#1b2630;
+  --line:#27343f;
+  --ink:#dbe4ea;
+  --ink-soft:#8aa0ad;
+  --phosphor:#46e6a0;     /* validé / actif */
+  --phosphor-dim:#1f7a57;
+  --amber:#f0b429;        /* minuteur / attention */
+  --red:#ff6b6b;          /* erreur */
+  --blue:#5ab0ff;
+  --radius:14px;
+  --mono:'Courier New',ui-monospace,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 600px at 80% -10%, #16222c 0%, transparent 60%),
+    var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  line-height:1.5;
+  -webkit-user-select:none;
+  -moz-user-select:none;
+  user-select:none;
+  min-height:100vh;
+}
+
+.wrap{max-width:760px;margin:0 auto;padding:26px 18px 80px}
+
+/* ---- En-tête / bandeau instrument ---- */
+.topbar{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  border-radius:var(--radius);
+  padding:14px 18px;margin-bottom:20px;
+  position:sticky;top:8px;z-index:30;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+.led{width:11px;height:11px;border-radius:50%;background:var(--phosphor);
+  box-shadow:0 0 10px var(--phosphor);flex:0 0 auto;animation:blink 2.4s infinite}
+@keyframes blink{0%,92%,100%{opacity:1}96%{opacity:.25}}
+.topbar h1{font-size:.95rem;letter-spacing:.5px;margin:0;font-weight:600;text-transform:uppercase}
+.topbar .sub{font-size:.72rem;color:var(--ink-soft);letter-spacing:1px}
+.spacer{flex:1}
+
+.timer{
+  font-family:var(--mono);font-size:1.15rem;font-weight:700;letter-spacing:2px;
+  color:var(--amber);background:#0b1116;border:1px solid var(--line);
+  padding:6px 12px;border-radius:8px;min-width:96px;text-align:center;
+}
+.timer.danger{color:var(--red);animation:pulse .9s infinite}
+@keyframes pulse{50%{opacity:.4}}
+
+/* ---- Cartes ---- */
+.card{
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,var(--panel),#121a21);
+  border-radius:var(--radius);
+  padding:24px;margin-bottom:18px;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+}
+h2{margin:.1em 0 .4em;font-size:1.25rem}
+p{margin:.4em 0}
+.muted{color:var(--ink-soft);font-size:.92rem}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:2px;
+  color:var(--phosphor);text-transform:uppercase}
+
+/* ---- Boutons ---- */
+.btn{
+  appearance:none;border:1px solid var(--phosphor-dim);
+  background:linear-gradient(180deg,#163a2c,#0f2a20);
+  color:var(--phosphor);font-family:var(--sans);font-weight:600;font-size:1rem;
+  padding:12px 22px;border-radius:10px;cursor:pointer;letter-spacing:.3px;
+  transition:transform .06s ease, box-shadow .2s ease, filter .2s;
+}
+.btn:hover{filter:brightness(1.15);box-shadow:0 0 0 3px rgba(70,230,160,.12)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.4)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink-soft)}
+.btn.ghost:hover{color:var(--ink);box-shadow:none}
+.btn.amber{border-color:#7a5a12;background:linear-gradient(180deg,#3a2c0c,#2a1f08);color:var(--amber)}
+
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.right{justify-content:flex-end}
+
+/* ---- Champs ---- */
+input[type=text]{
+  -webkit-user-select:text;user-select:text;
+  background:#0b1116;border:1px solid var(--line);color:var(--ink);
+  font-family:var(--mono);font-size:1.05rem;padding:12px 14px;border-radius:9px;
+  width:100%;
+}
+input[type=text]:focus{outline:none;border-color:var(--phosphor-dim);
+  box-shadow:0 0 0 3px rgba(70,230,160,.1)}
+
+/* ---- Choix QCM ---- */
+.choice{
+  display:block;width:100%;text-align:left;
+  border:1px solid var(--line);background:var(--panel-2);
+  color:var(--ink);padding:13px 16px;border-radius:10px;margin:8px 0;
+  cursor:pointer;font-size:1rem;font-family:var(--mono);
+  transition:border-color .15s,background .15s;
+}
+.choice:hover{border-color:var(--phosphor-dim)}
+.choice.selected{border-color:var(--blue);background:#13212e}
+.choice.good{border-color:var(--phosphor);background:#102a20;color:var(--phosphor)}
+.choice.bad{border-color:var(--red);background:#2a1414;color:var(--red)}
+.choice:disabled{cursor:default}
+
+/* ---- Retour essai / correction ---- */
+.feedback{margin-top:14px;border-radius:10px;padding:14px 16px;font-size:.95rem}
+.fb-retry{border:1px solid #7a5a12;background:#241b07;color:var(--amber)}
+.fb-good{border:1px solid var(--phosphor-dim);background:#0f231b;color:var(--phosphor)}
+.fb-bad{border:1px solid #6a2222;background:#241010;color:var(--red)}
+.method{border:1px dashed var(--line);background:#0c1217;border-radius:10px;
+  padding:14px 16px;margin-top:12px}
+.method h4{margin:0 0 6px;font-size:.8rem;letter-spacing:1px;text-transform:uppercase;color:var(--blue)}
+.method ol{margin:.3em 0 0;padding-left:1.2em}
+.method li{margin:.25em 0}
+
+/* ---- Barre de progression ---- */
+.prog{height:6px;background:#0b1116;border-radius:99px;overflow:hidden;margin:4px 0 18px;border:1px solid var(--line)}
+.prog > i{display:block;height:100%;background:linear-gradient(90deg,var(--phosphor-dim),var(--phosphor));width:0;transition:width .3s}
+.qmeta{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);
+  font-size:.78rem;color:var(--ink-soft);letter-spacing:1px;margin-bottom:6px}
+
+.tries{display:flex;gap:5px}
+.dot{width:9px;height:9px;border-radius:50%;background:#33424d;border:1px solid var(--line)}
+.dot.used{background:var(--red);border-color:var(--red)}
+.dot.ok{background:var(--phosphor);border-color:var(--phosphor)}
+
+/* ---- Menu parties ---- */
+.parts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+@media(max-width:560px){.parts{grid-template-columns:1fr}.parts-card .row{flex-direction:column;align-items:stretch}}
+.parts-card{border:1px solid var(--line);border-radius:var(--radius);padding:20px;
+  background:linear-gradient(180deg,var(--panel),#121a21)}
+.badge{font-family:var(--mono);font-size:.7rem;padding:3px 8px;border-radius:99px;letter-spacing:1px}
+.badge.todo{color:var(--amber);border:1px solid #7a5a12}
+.badge.done{color:var(--phosphor);border:1px solid var(--phosphor-dim)}
+.badge.locked{color:var(--ink-soft);border:1px solid var(--line)}
+
+.score-big{font-family:var(--mono);font-size:2.4rem;font-weight:700;color:var(--phosphor)}
+
+/* ---- Overlays sécurité ---- */
+.veil{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;
+  background:rgba(8,12,15,.97);backdrop-filter:blur(6px);text-align:center;padding:30px}
+.veil.on{display:flex}
+.veil .box{max-width:440px}
+.veil h3{color:var(--amber);font-size:1.3rem;margin:.2em 0}
+.blurred .wrap{filter:blur(14px);pointer-events:none}
+
+.kbd{font-family:var(--mono);background:#0b1116;border:1px solid var(--line);
+  padding:2px 7px;border-radius:5px;font-size:.85rem}
+.hint-line{font-size:.85rem;color:var(--ink-soft);margin-top:10px;font-style:italic}
+footer{color:var(--ink-soft);font-size:.75rem;text-align:center;margin-top:30px;letter-spacing:.5px}
+.formula{font-family:var(--mono);background:#0b1116;border:1px solid var(--line);
+  border-radius:6px;padding:1px 6px}
+
+/* ============== MOBILE ============== */
+@media(max-width:600px){
+  .wrap{padding:16px 12px 70px}
+  .topbar{padding:11px 13px;gap:10px;top:6px}
+  .topbar h1{font-size:.82rem}
+  .topbar .sub{font-size:.62rem}
+  .timer{font-size:1rem;min-width:78px;padding:5px 9px;letter-spacing:1px}
+  .card{padding:17px}
+  h2{font-size:1.12rem}
+  .score-big{font-size:2rem}
+  /* boutons d'action pleine largeur = cibles tactiles confortables */
+  .row.right{justify-content:stretch}
+  .row.right .btn{width:100%}
+  .card .row > .btn{flex:1 1 auto}
+  .choice{padding:14px 14px;font-size:1rem}
+  input[type=text]{font-size:16px;padding:13px 14px} /* >=16px : évite le zoom iOS */
+  .btn{font-size:1rem;padding:13px 18px}
+}
+@media(max-width:380px){
+  .topbar .sub{display:none}
+}
+</style>
+</head>
+<body oncontextmenu="return false">
+
+<!-- Voile de pause (perte de focus / tentative de capture) -->
+<div class="veil" id="veilFocus">
+  <div class="box">
+    <div class="led" style="margin:0 auto 14px"></div>
+    <h3>Activité en pause</h3>
+    <p class="muted">Vous avez quitté la page. Pour préserver l'intégrité de l'évaluation,
+    le contenu est masqué. Le minuteur, lui, continue de tourner.</p>
+    <p class="muted">Reviens sur l'activité et clique ci-dessous pour reprendre.</p>
+    <button class="btn" onclick="hideFocusVeil()">Reprendre</button>
+  </div>
+</div>
+
+<!-- Voile blocage automate / IA -->
+<div class="veil" id="veilBot">
+  <div class="box">
+    <h3>Accès non autorisé</h3>
+    <p class="muted">Un environnement automatisé (robot, agent ou navigateur piloté)
+    a été détecté. Cette activité doit être réalisée manuellement par l'élève.</p>
+    <p class="muted">Ouvre le fichier dans un navigateur classique (Firefox, Chrome, Edge…) pour continuer.</p>
+  </div>
+</div>
+
+<div class="wrap" id="app"><!-- contenu injecté par JS --></div>
+
+<footer>Banc de révision — Seconde pro · Préparation Première (MELEC · CIEL · ICCER)</footer>
+
+<script>
+/* ============================================================
+   1) PARAMÈTRES ENSEIGNANT
+   ============================================================ */
+
+// >>> Code à saisir pour REMETTRE À ZÉRO l'activité. À modifier ici.
+const CODE_RESET = "brookisdavy";
+
+// Durée de chaque partie, en minutes.
+const DUREE_MIN = 60;
+
+/* >>> ENVOI DES RÉSULTATS À L'ENSEIGNANT (via un Google Form, sans serveur)
+   ----------------------------------------------------------------------
+   MODE D'EMPLOI (5 min, une seule fois) :
+   1. Crée un Google Form avec 4 questions « réponse courte/paragraphe »,
+      dans cet ordre : Nom, Section, Score, Détails.
+   2. En haut à droite du formulaire : menu (⋮) → « Obtenir le lien pré-rempli ».
+      Remplis n'importe quoi dans les 4 champs, puis clique « Obtenir le lien ».
+   3. Le lien copié ressemble à :
+      https://docs.google.com/forms/d/e/AAAA/viewform?entry.111=x&entry.222=y&...
+      • Recopie la partie avant « ?viewform » et remplace « viewform » par
+        « formResponse » → c'est ENDPOINT ci-dessous.
+      • Recopie chaque « entry.XXXXXX » dans le bon champ ci-dessous (même ordre).
+   4. C'est tout : les réponses arrivent dans la feuille « Réponses » du formulaire.
+   Tant que ENDPOINT reste vide, seul le bouton « Copier mes résultats » s'affiche. */
+const FORM_CONFIG = {
+  endpoint: "https://docs.google.com/forms/d/e/1FAIpQLSfREsK0vPcocMwJfVI1pjCV2uSOwOO9lcYfd0CfhMPHeScJIQ/viewform?usp=pp_url&entry.191579236=a&entry.184190019=b&entry.1830096420=c&entry.2141502153=d",                 // ex : "https://docs.google.com/forms/d/e/1FAIpQLSfREsK0vPcocMwJfVI1pjCV2uSOwOO9lcYfd0CfhMPHeScJIQ/viewform?usp=pp_url&entry.191579236=a&entry.184190019=b&entry.1830096420=c&entry.2141502153=d"
+  fields: {
+    nom:     "Nom", // champ « Nom »
+    section: "Section", // champ « Section »
+    score:   "Score", // champ « Score »
+    details: "Détails"  // champ « Détails »
+  }
+};
+
+/* ============================================================
+   2) CONTENU PÉDAGOGIQUE
+   type:'qcm'  -> options[] + bonne (index)
+   type:'num'  -> reponse (nombre) + tolerance + unite (affichage)
+   indice  : aide affichée AVANT le 2e essai
+   methode : "comment réfléchir" (révélé une fois la question close)
+   ============================================================ */
+
+const PARTIES = [
+{
+  id:"maths", titre:"Mathématiques", icone:"∑",
+  intro:"Calcul, proportionnalité, fonctions, géométrie et statistiques — les outils que tu réutiliseras tout de suite en Première.",
+  questions:[
+    {
+      type:"qcm",
+      enonce:"Un condensateur a une capacité de 0,000047 F. Quelle est son écriture scientifique ?",
+      options:["4,7 × 10⁻⁵ F","47 × 10⁻⁶ F","4,7 × 10⁻⁴ F","4,7 × 10⁵ F"],
+      bonne:0,
+      indice:"Une écriture scientifique s'écrit a × 10ⁿ avec UN seul chiffre non nul avant la virgule (1 ≤ a < 10). Le nombre est petit : l'exposant est donc négatif.",
+      methode:["Place la virgule pour n'avoir qu'un chiffre non nul devant : 4,7.",
+               "Compte de combien de rangs tu as déplacé la virgule : ici 5 rangs.",
+               "Le nombre de départ est plus petit que 1 → exposant négatif : 10⁻⁵.",
+               "Résultat : 4,7 × 10⁻⁵ F. (47 × 10⁻⁶ vaut pareil mais n'est pas une écriture scientifique : 47 ≥ 10.)"]
+    },
+    {
+      type:"num", reponse:144, tolerance:0.5, unite:"€",
+      enonce:"Une facture d'électricité hors taxes (HT) s'élève à 120 €. La TVA est de 20 %. Quel est le montant TTC, en euros ?",
+      indice:"« +20 % » revient à multiplier par 1,20. Ou bien : calcule d'abord les 20 % puis ajoute-les au montant de départ.",
+      methode:["Augmenter de 20 %, c'est multiplier par (1 + 20/100) = 1,20.",
+               "120 × 1,20 = 144.",
+               "Vérification par étapes : 20 % de 120 = 0,20 × 120 = 24, puis 120 + 24 = 144 €."]
+    },
+    {
+      type:"num", reponse:145, tolerance:0.5, unite:"€",
+      enonce:"Un électricien facture 40 € de déplacement, puis 35 € par heure de travail. Quel est le coût total d'une intervention de 3 heures, en euros ?",
+      indice:"Le coût suit un modèle affine : prix = (taux horaire × nombre d'heures) + déplacement, soit y = 35x + 40.",
+      methode:["Identifie la partie qui dépend du temps : 35 €/h pour 3 h → 35 × 3 = 105 €.",
+               "Ajoute la partie fixe (le déplacement) : 105 + 40 = 145 €.",
+               "C'est une fonction affine f(x) = 35x + 40 : 35 est le coefficient directeur, 40 l'ordonnée à l'origine."]
+    },
+    {
+      type:"num", reponse:5, tolerance:0.05, unite:"m",
+      enonce:"On tire un câble en diagonale d'une cloison rectangulaire de 3 m de large et 4 m de haut. Quelle est la longueur de la diagonale, en mètres ?",
+      indice:"La diagonale est l'hypoténuse d'un triangle rectangle de côtés 3 et 4. Pense au théorème de Pythagore.",
+      methode:["Le triangle est rectangle : la diagonale (hypoténuse) vérifie d² = 3² + 4².",
+               "3² + 4² = 9 + 16 = 25.",
+               "d = √25 = 5 m. (C'est le célèbre triangle 3-4-5.)"]
+    },
+    {
+      type:"num", reponse:4.3, tolerance:0.15, unite:"m",
+      enonce:"Une échelle de 5 m appuyée contre un mur forme un angle de 60° avec le sol. À quelle hauteur touche-t-elle le mur ? (arrondir au dixième de mètre)",
+      indice:"La hauteur est le côté OPPOSÉ à l'angle de 60°, l'échelle est l'hypoténuse. Quel rapport trigonométrique relie opposé et hypoténuse ?",
+      methode:["Repère les côtés : hypoténuse = échelle = 5 m ; côté opposé à 60° = hauteur cherchée.",
+               "Opposé / hypoténuse = sinus : sin(60°) = hauteur / 5.",
+               "hauteur = 5 × sin(60°) ≈ 5 × 0,866 ≈ 4,3 m."]
+    },
+    {
+      type:"num", reponse:230, tolerance:0.5, unite:"V",
+      enonce:"Cinq relevés de tension secteur (en volts) : 230 ; 228 ; 232 ; 229 ; 231. Quelle est la tension moyenne, en volts ?",
+      indice:"Moyenne = (somme de toutes les valeurs) ÷ (nombre de valeurs).",
+      methode:["Additionne les 5 valeurs : 230 + 228 + 232 + 229 + 231 = 1150.",
+               "Divise par l'effectif (5 mesures) : 1150 ÷ 5 = 230.",
+               "La tension moyenne est 230 V."]
+    },
+    {
+      type:"num", reponse:85, tolerance:0.5, unite:"%",
+      enonce:"Un moteur reçoit une puissance de 1000 W et fournit 850 W de puissance utile. Quel est son rendement, en pourcentage ?",
+      indice:"Rendement = (puissance utile ÷ puissance reçue) × 100. C'est un rapport « ce qu'on récupère / ce qu'on a mis ».",
+      methode:["Forme le rapport utile/reçu : 850 / 1000 = 0,85.",
+               "Transforme en pourcentage en multipliant par 100 : 0,85 × 100 = 85.",
+               "Le rendement vaut 85 % (un rendement est toujours ≤ 100 %)."]
+    }
+  ]
+},
+{
+  id:"physique", titre:"Physique-Chimie", icone:"⚡",
+  intro:"Électricité (loi d'Ohm, puissance, énergie), unités et chimie des solutions — le cœur de tes futures activités techniques.",
+  questions:[
+    {
+      type:"num", reponse:22, tolerance:0.2, unite:"V",
+      enonce:"Une résistance R = 220 Ω est traversée par un courant I = 0,1 A. Quelle est la tension U à ses bornes, en volts ?",
+      indice:"Loi d'Ohm : U = R × I. Vérifie que l'intensité est bien en ampères (0,1 A, pas en mA).",
+      methode:["Écris la loi d'Ohm : U = R × I.",
+               "Remplace avec les bonnes unités : U = 220 Ω × 0,1 A.",
+               "U = 22 V."]
+    },
+    {
+      type:"num", reponse:1150, tolerance:1, unite:"W",
+      enonce:"Un radiateur fonctionne sous une tension U = 230 V et il est parcouru par un courant I = 5 A. Quelle est sa puissance électrique, en watts ?",
+      indice:"Puissance en courant continu/secteur : P = U × I (volts × ampères = watts).",
+      methode:["Relation de la puissance électrique : P = U × I.",
+               "P = 230 V × 5 A.",
+               "P = 1150 W."]
+    },
+    {
+      type:"num", reponse:2300, tolerance:2, unite:"Wh",
+      enonce:"Ce radiateur de 1150 W fonctionne pendant 2 heures. Quelle énergie consomme-t-il, en wattheures (Wh) ?",
+      indice:"Énergie = Puissance × durée : E = P × t. Avec P en watts et t en heures, E est en wattheures (Wh).",
+      methode:["Relation de l'énergie : E = P × t.",
+               "E = 1150 W × 2 h = 2300 Wh.",
+               "Soit 2,3 kWh (on divise par 1000 pour passer en kWh) : c'est l'unité de ta facture d'électricité."]
+    },
+    {
+      type:"num", reponse:24, tolerance:0.2, unite:"Ω",
+      enonce:"Une lampe alimentée sous U = 12 V est parcourue par un courant I = 0,5 A. Quelle est sa résistance, en ohms ?",
+      indice:"Pars de la loi d'Ohm U = R × I et isole R : R = U / I.",
+      methode:["Loi d'Ohm : U = R × I.",
+               "On cherche R, donc on divise la tension par l'intensité : R = U / I.",
+               "R = 12 V / 0,5 A = 24 Ω."]
+    },
+    {
+      type:"num", reponse:4700, tolerance:1, unite:"Ω",
+      enonce:"Sur un schéma électronique, une résistance vaut 4,7 kΩ. Combien cela fait-il en ohms (Ω) ?",
+      indice:"Le préfixe « kilo » (k) signifie × 1000.",
+      methode:["« kilo » veut dire mille : 1 kΩ = 1000 Ω.",
+               "On multiplie donc par 1000 : 4,7 × 1000.",
+               "4,7 kΩ = 4700 Ω."]
+    },
+    {
+      type:"qcm",
+      enonce:"Dans un circuit où plusieurs composants sont branchés EN SÉRIE (les uns à la suite des autres), l'intensité du courant…",
+      options:["est la même en tout point du circuit",
+               "se partage entre les composants",
+               "s'additionne d'un composant à l'autre",
+               "est nulle dans le dernier composant"],
+      bonne:0,
+      indice:"En série, il n'y a qu'un seul chemin pour le courant : pense à une seule file de voitures sur une route sans embranchement.",
+      methode:["En série, il existe un unique chemin : le courant n'a nulle part où se diviser.",
+               "Donc la même intensité traverse chaque composant : I est identique partout.",
+               "Attention à ne pas confondre : c'est en DÉRIVATION (parallèle) que le courant se partage."]
+    },
+    {
+      type:"num", reponse:10, tolerance:0.1, unite:"g/L",
+      enonce:"On dissout 5 g de sel dans 0,5 L d'eau. Quelle est la concentration massique de la solution, en g/L ?",
+      indice:"Concentration massique = masse de soluté ÷ volume de solution : Cm = m / V.",
+      methode:["Écris la relation : Cm = m / V.",
+               "Remplace : m = 5 g et V = 0,5 L.",
+               "Cm = 5 / 0,5 = 10 g/L."]
+    }
+  ]
+},
+{
+  id:"appli", titre:"Exercices d'application", icone:"🛠", noTimer:true,
+  intro:"10 situations professionnelles qui combinent maths et physique. Pas de minuteur : prends le temps de bien raisonner.",
+  questions:[
+    {
+      type:"num", reponse:6, tolerance:0.05, unite:"A",
+      enonce:"Un sèche-cheveux de 1380 W est branché sur une prise de 230 V. Quelle intensité le traverse, en ampères ?",
+      indice:"À partir de P = U × I, on isole l'intensité : I = P / U.",
+      methode:["Relation de la puissance : P = U × I.",
+               "On cherche I, donc I = P / U.",
+               "I = 1380 / 230 = 6 A."]
+    },
+    {
+      type:"num", reponse:6, tolerance:0.05, unite:"kWh",
+      enonce:"Un chauffe-eau de 2 kW fonctionne 3 heures par jour. Quelle énergie consomme-t-il par jour, en kWh ?",
+      indice:"E = P × t, avec P en kW et t en heures → résultat directement en kWh.",
+      methode:["Relation de l'énergie : E = P × t.",
+               "E = 2 kW × 3 h.",
+               "E = 6 kWh par jour."]
+    },
+    {
+      type:"num", reponse:45, tolerance:0.5, unite:"€",
+      enonce:"Ce chauffe-eau consomme 6 kWh par jour. Le kWh coûte 0,25 €. Quel est son coût de fonctionnement sur 30 jours, en euros ?",
+      indice:"Calcule d'abord l'énergie totale du mois (kWh par jour × 30), puis multiplie par le prix du kWh.",
+      methode:["Énergie sur le mois : 6 kWh × 30 jours = 180 kWh.",
+               "Coût : 180 kWh × 0,25 €/kWh.",
+               "Coût = 45 € pour le mois."]
+    },
+    {
+      type:"num", reponse:1.5, tolerance:0.02, unite:"m",
+      enonce:"Pour relier deux appareils, un câble part d'un point, monte de 1,2 m puis se décale de 0,9 m à l'horizontale. En le tirant en diagonale (ligne droite), quelle longueur faut-il, en mètres ?",
+      indice:"La ligne droite est l'hypoténuse d'un triangle rectangle de côtés 1,2 m et 0,9 m : utilise Pythagore.",
+      methode:["d² = 1,2² + 0,9² = 1,44 + 0,81 = 2,25.",
+               "d = √2,25 = 1,5 m.",
+               "Tirer droit (1,5 m) économise du câble par rapport au trajet 1,2 + 0,9 = 2,1 m."]
+    },
+    {
+      type:"num", reponse:1, tolerance:0.03, unite:"m",
+      enonce:"Un panneau solaire de 2 m de long est incliné à 30° par rapport au sol. De quelle hauteur son bord haut s'élève-t-il au-dessus du bord bas, en mètres ?",
+      indice:"La hauteur est le côté opposé à l'angle de 30° ; le panneau (2 m) est l'hypoténuse. Pense au sinus.",
+      methode:["Côté opposé / hypoténuse = sinus : hauteur = 2 × sin(30°).",
+               "sin(30°) = 0,5.",
+               "hauteur = 2 × 0,5 = 1 m."]
+    },
+    {
+      type:"num", reponse:4275, tolerance:5, unite:"Wh",
+      enonce:"Une installation photovoltaïque produit 4500 Wh, mais 5 % de cette énergie est perdue dans les câbles. Quelle énergie reste-t-il réellement disponible, en Wh ?",
+      indice:"Perdre 5 %, c'est conserver 95 % : on multiplie par 0,95.",
+      methode:["Conserver après une perte de 5 % revient à garder (100 − 5) = 95 %.",
+               "On multiplie par 0,95 : 4500 × 0,95.",
+               "Énergie disponible = 4275 Wh."]
+    },
+    {
+      type:"num", reponse:150, tolerance:1, unite:"Ω",
+      enonce:"Pour protéger une LED, on place une résistance en série. L'alimentation fournit 5 V, la LED utilise 2 V, et le courant doit être de 20 mA (soit 0,02 A). Quelle résistance faut-il, en ohms ?",
+      indice:"La résistance ne reçoit que la tension restante : 5 V − 2 V = 3 V. Puis R = U / I avec I en ampères.",
+      methode:["Tension aux bornes de la résistance : 5 − 2 = 3 V.",
+               "Loi d'Ohm : R = U / I = 3 / 0,02.",
+               "R = 150 Ω."]
+    },
+    {
+      type:"num", reponse:20, tolerance:0.5, unite:"mA",
+      enonce:"Dans un circuit en série, une résistance de 150 Ω et une de 100 Ω sont alimentées sous 5 V. Quelle est l'intensité du courant, en milliampères (mA) ?",
+      indice:"En série, les résistances s'additionnent (R = 150 + 100). Puis I = U / R, en ampères, à convertir en mA (×1000).",
+      methode:["Résistance équivalente (série) : 150 + 100 = 250 Ω.",
+               "I = U / R = 5 / 250 = 0,02 A.",
+               "Conversion : 0,02 A × 1000 = 20 mA."]
+    },
+    {
+      type:"num", reponse:4, tolerance:0.1, unite:"Ω",
+      enonce:"Lors d'un contrôle qualité, on mesure 5 résistances (en Ω) : 98 ; 102 ; 100 ; 101 ; 99. Quelle est l'étendue de cette série de mesures, en ohms ?",
+      indice:"L'étendue = valeur la plus grande − valeur la plus petite.",
+      methode:["Repère le maximum (102) et le minimum (98).",
+               "Étendue = max − min = 102 − 98.",
+               "Étendue = 4 Ω (elle mesure la dispersion des valeurs)."]
+    },
+    {
+      type:"qcm",
+      enonce:"Sur un tableau électrique, on veut que chaque appareil puisse fonctionner même si un autre est éteint ou en panne. Comment faut-il câbler les appareils entre eux ?",
+      options:["En dérivation (parallèle)","En série","Peu importe, le résultat est identique","En série avec un seul interrupteur"],
+      bonne:0,
+      indice:"En série, couper un appareil coupe tout le circuit. En dérivation, chaque branche est indépendante.",
+      methode:["En série, le courant n'a qu'un seul chemin : si un appareil s'ouvre, tout s'arrête.",
+               "En dérivation (parallèle), chaque appareil a sa propre branche, donc reste indépendant.",
+               "Pour la continuité de service, on câble donc EN DÉRIVATION — c'est le principe des prises d'une maison."]
+    }
+  ]
+}
+];
+
+/* ============================================================
+   3) ÉTAT + PERSISTANCE (anti-rafraîchissement)
+   ============================================================ */
+const STORE_KEY = "revision_seconde_pro_v1";
+let MEM = null; // secours si localStorage indisponible
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){ if(MEM) return MEM; }
+  return freshState();
+}
+function freshState(){
+  const s = { eleve:"", started:false, parties:{} };
+  PARTIES.forEach(p=>{
+    s.parties[p.id] = { startedAt:null, finished:false, qIndex:0, answers:{}, timeUp:false, sent:false };
+  });
+  return s;
+}
+let STATE = loadState();
+
+function saveState(){
+  MEM = STATE;
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); }catch(e){}
+}
+function hardReset(){
+  STATE = freshState();
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+  MEM = null;
+  saveState();
+}
+
+/* ============================================================
+   4) SÉCURITÉ (dissuasion) : capture / IA / automate
+   Remarque honnête : un navigateur ne peut pas réellement
+   empêcher une capture d'écran système ou une photo. Ces
+   mesures sont dissuasives et signalent les comportements.
+   ============================================================ */
+
+// Détection d'automate / navigateur piloté (Selenium, Puppeteer…)
+function looksAutomated(){
+  if(navigator.webdriver === true) return true;
+  if(window.callPhantom || window._phantom) return true;
+  if(/HeadlessChrome/i.test(navigator.userAgent)) return true;
+  return false;
+}
+if(looksAutomated()){
+  document.getElementById('veilBot').classList.add('on');
+}
+
+// Dissuasion capture : touche Impr. écran + raccourcis copie/print/devtools
+document.addEventListener('keyup', e=>{
+  if(e.key === 'PrintScreen'){
+    try{ navigator.clipboard.writeText('— capture neutralisée —'); }catch(_){}
+    flashShield();
+  }
+});
+document.addEventListener('keydown', e=>{
+  const k = (e.key||'').toLowerCase();
+  const blocked =
+     (e.ctrlKey && ['p','s','c','u'].includes(k)) || // print, save, copy, source
+     (e.metaKey && ['p','s'].includes(k)) ||
+     k === 'f12' ||
+     (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(k)); // devtools
+  if(blocked){ e.preventDefault(); flashShield(); }
+});
+
+let shieldTimer=null;
+function flashShield(){
+  document.body.classList.add('blurred');
+  clearTimeout(shieldTimer);
+  shieldTimer=setTimeout(()=>document.body.classList.remove('blurred'), 900);
+}
+
+// Pause + masquage si l'onglet/appli passe en arrière-plan (anti copier-vers-IA).
+// On utilise uniquement visibilitychange : fiable sur mobile et insensible à
+// l'ouverture du clavier virtuel (contrairement à l'évènement "blur").
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) showFocusVeil();
+});
+function showFocusVeil(){ if(STATE.started) document.getElementById('veilFocus').classList.add('on'); }
+function hideFocusVeil(){ document.getElementById('veilFocus').classList.remove('on'); }
+window.hideFocusVeil = hideFocusVeil;
+
+/* ============================================================
+   5) MINUTEUR
+   ============================================================ */
+let tickHandle = null;
+function partyById(pid){ return PARTIES.find(x=>x.id===pid); }
+function remainingSeconds(pid){
+  const p = partyById(pid);
+  if(p && p.noTimer) return Infinity;
+  const ps = STATE.parties[pid];
+  if(!ps.startedAt) return DUREE_MIN*60;
+  const elapsed = Math.floor((Date.now() - ps.startedAt)/1000);
+  return Math.max(0, DUREE_MIN*60 - elapsed);
+}
+function fmt(s){
+  const m = Math.floor(s/60), r = s%60;
+  return String(m).padStart(2,'0')+":"+String(r).padStart(2,'0');
+}
+
+/* ============================================================
+   6) RENDU
+   ============================================================ */
+const app = document.getElementById('app');
+let CURRENT = null; // partie en cours d'affichage (objet)
+
+function render(){
+  if(tickHandle){ clearInterval(tickHandle); tickHandle=null; }
+  if(!STATE.started){ renderHome(); return; }
+  if(CURRENT){ renderQuestion(CURRENT); return; }
+  renderMenu();
+}
+
+function topbar(label, timerPid){
+  let t = "";
+  if(timerPid){
+    t = `<div class="spacer"></div><div class="timer" id="timer">--:--</div>`;
+  }else{
+    t = `<div class="spacer"></div><button class="btn ghost" onclick="askReset()">Recommencer</button>`;
+  }
+  return `<div class="topbar">
+      <div class="led"></div>
+      <div>
+        <h1>${label}</h1>
+        <div class="sub">Vers la Première · MELEC · CIEL · ICCER</div>
+      </div>${t}
+    </div>`;
+}
+
+/* ---- Accueil ---- */
+function renderHome(){
+  app.innerHTML = topbar("Banc de révision") + `
+    <div class="card">
+      <div class="eyebrow">Préparation à la rentrée</div>
+      <h2>Es-tu prêt·e pour la Première&nbsp;?</h2>
+      <p class="muted">Trois sections t'attendent : <strong>Mathématiques</strong> et <strong>Physique-Chimie</strong>
+      (limitées à <strong>${DUREE_MIN} min</strong> chacune), puis <strong>Exercices d'application</strong> (sans minuteur).
+      Tu disposes de <strong>deux essais</strong> par question.
+      À la fin de chaque question, une explication te montre <em>comment raisonner</em>.</p>
+      <ul class="muted">
+        <li>Une fois une réponse validée, elle est définitive — inutile de rafraîchir la page.</li>
+        <li>Le minuteur continue même si tu changes d'onglet.</li>
+        <li>Travaille seul·e : feuille, crayon et calculatrice autorisés.</li>
+      </ul>
+      <div style="margin-top:16px">
+        <label class="muted" for="nom">Ton prénom et nom</label>
+        <input type="text" id="nom" placeholder="Ex. Camille Durand" value="${escapeHtml(STATE.eleve)}" style="margin-top:6px;max-width:340px">
+      </div>
+      <div class="row" style="margin-top:18px">
+        <button class="btn" onclick="start()">Commencer</button>
+      </div>
+    </div>`;
+  const inp = document.getElementById('nom');
+  if(inp) inp.addEventListener('input', e=>{ STATE.eleve = e.target.value; saveState(); });
+}
+function start(){
+  const inp = document.getElementById('nom');
+  STATE.eleve = inp ? inp.value.trim() : "";
+  STATE.started = true; saveState(); render();
+}
+
+/* ---- Menu des parties ---- */
+function renderMenu(){
+  let cards = "";
+  PARTIES.forEach(p=>{
+    const ps = STATE.parties[p.id];
+    let badge, btn;
+    if(ps.finished){
+      const sc = scorePartie(p);
+      badge = `<span class="badge done">TERMINÉ</span>`;
+      btn = `<button class="btn ghost" onclick="openPart('${p.id}')">Voir le bilan</button>`;
+      var extra = `<p class="muted" style="margin-top:8px">Score : <strong>${sc.ok}/${sc.total}</strong></p>`;
+    }else if(ps.startedAt){
+      badge = `<span class="badge todo">EN COURS</span>`;
+      btn = `<button class="btn" onclick="openPart('${p.id}')">Reprendre</button>`;
+      var extra = `<p class="muted" style="margin-top:8px">Question ${ps.qIndex+1} / ${p.questions.length}</p>`;
+    }else{
+      const lbl = p.noTimer ? "À FAIRE · libre" : "À FAIRE · "+DUREE_MIN+" min";
+      badge = `<span class="badge todo">${lbl}</span>`;
+      btn = `<button class="btn" onclick="openPart('${p.id}')">Démarrer</button>`;
+      var extra = `<p class="muted" style="margin-top:8px">${p.questions.length} questions</p>`;
+    }
+    cards += `<div class="parts-card">
+        <div class="row" style="justify-content:space-between">
+          <div style="font-size:1.6rem;font-family:var(--mono)">${p.icone}</div>${badge}
+        </div>
+        <h2 style="margin-top:6px">${p.titre}</h2>
+        <p class="muted">${p.intro}</p>
+        ${extra}
+        <div class="row" style="margin-top:14px">${btn}</div>
+      </div>`;
+  });
+
+  const both = PARTIES.every(p=>STATE.parties[p.id].finished);
+  app.innerHTML = topbar(`Bonjour ${STATE.eleve ? escapeHtml(STATE.eleve.split(' ')[0]) : ''}`.trim()) + `
+    <div class="card">
+      <div class="eyebrow">Tableau de bord</div>
+      <h2>Choisis une partie</h2>
+      <p class="muted">Chaque partie est indépendante et chronométrée séparément.</p>
+    </div>
+    <div class="parts">${cards}</div>
+    ${ both ? `<div class="card" style="margin-top:18px;text-align:center">
+        <div class="eyebrow">Bravo</div>
+        <h2>Toutes les sections sont terminées 🎉</h2>
+        <p class="muted">Pour refaire l'activité, ton enseignant·e doit saisir le code de redémarrage.</p>
+        <button class="btn amber" onclick="askReset()">Recommencer (code requis)</button>
+      </div>` : "" }`;
+}
+
+function openPart(pid){
+  const p = PARTIES.find(x=>x.id===pid);
+  const ps = STATE.parties[pid];
+  if(!ps.startedAt && !ps.finished){ ps.startedAt = Date.now(); saveState(); }
+  if(remainingSeconds(pid) <= 0) ps.timeUp = true;
+  CURRENT = p;
+  saveState(); render();
+}
+window.openPart = openPart;
+
+/* ---- Affichage d'une question ---- */
+function renderQuestion(p){
+  const ps = STATE.parties[p.id];
+
+  // Temps écoulé ? (uniquement pour les parties chronométrées)
+  if(!p.noTimer && !ps.finished && remainingSeconds(p.id) <= 0){ ps.timeUp = true; finishPart(p); }
+
+  if(ps.finished){ renderBilan(p); return; }
+
+  const i = ps.qIndex;
+  const q = p.questions[i];
+  const ans = ps.answers[i] || { tries:0, done:false, correct:false, picked:null, typed:"" };
+
+  const dots = `<div class="tries">${[0,1].map(n=>{
+      let cls="dot";
+      if(ans.done && ans.correct && n < ans.tries) cls="dot ok";
+      else if(n < ans.tries) cls="dot used";
+      return `<span class="${cls}"></span>`;
+    }).join("")}</div>`;
+
+  let body = "";
+  if(q.type==="qcm"){
+    body = `<div id="choices">` + q.options.map((opt,idx)=>{
+      let cls="choice";
+      if(ans.done){
+        if(idx===q.bonne) cls+=" good";
+        else if(idx===ans.picked) cls+=" bad";
+      }else if(ans.picked===idx){ cls+=" selected"; }
+      const dis = ans.done ? "disabled" : "";
+      return `<button class="${cls}" ${dis} onclick="pick(${idx})">${opt}</button>`;
+    }).join("") + `</div>`;
+  }else{
+    const dis = ans.done ? "disabled" : "";
+    body = `<div class="row" style="align-items:stretch">
+        <input type="text" id="numin" inputmode="decimal" autocomplete="off"
+               placeholder="Ta réponse…" value="${escapeHtml(ans.typed||"")}" ${dis}
+               style="max-width:240px" onkeydown="if(event.key==='Enter')validateNum()">
+        <span class="muted" style="align-self:center">${q.unite||""}</span>
+      </div>`;
+  }
+
+  // Zone de retour / correction
+  let fb = "";
+  if(ans.done){
+    fb = ans.correct
+      ? `<div class="feedback fb-good">✓ Bonne réponse${ans.tries===1?" du premier coup !":" (au 2ᵉ essai)."}</div>`
+      : `<div class="feedback fb-bad">✗ Réponse incorrecte. La bonne réponse est indiquée ci-dessus.</div>`;
+    fb += methodBlock(q);
+  }else if(ans.tries===1){
+    fb = `<div class="feedback fb-retry"><strong>Pas tout à fait.</strong> Il te reste un essai.<br>
+            <span style="opacity:.9">Indice : ${q.indice}</span></div>`;
+  }
+
+  const action = ans.done
+    ? `<button class="btn" onclick="next()">${i < p.questions.length-1 ? "Question suivante →" : "Terminer la partie"}</button>`
+    : (q.type==="qcm"
+        ? `<button class="btn" id="vbtn" ${ans.picked===null?"disabled":""} onclick="validateQcm()">Valider</button>`
+        : `<button class="btn" onclick="validateNum()">Valider</button>`);
+
+  app.innerHTML = topbar(p.titre, p.noTimer ? null : p.id) + `
+    <div class="card">
+      <div class="qmeta">
+        <span>QUESTION ${i+1} / ${p.questions.length}</span>
+        <span>${p.noTimer ? "Sans minuteur" : "Temps imparti : "+DUREE_MIN+" min"}</span>
+      </div>
+      <div class="prog"><i style="width:${(i)/(p.questions.length)*100}%"></i></div>
+      <div class="row" style="justify-content:space-between;margin-bottom:8px">
+        <span class="eyebrow">${p.titre}</span>${dots}
+      </div>
+      <h2 style="font-size:1.15rem;line-height:1.45">${q.enonce}</h2>
+      <div style="margin-top:16px">${body}</div>
+      ${fb}
+      <div class="row right" style="margin-top:18px">${action}</div>
+    </div>`;
+
+  // Minuteur live
+  startTicker(p.id);
+}
+
+function methodBlock(q){
+  return `<div class="method">
+      <h4>Comment raisonner</h4>
+      <ol>${q.methode.map(s=>`<li>${s}</li>`).join("")}</ol>
+    </div>`;
+}
+
+function startTicker(pid){
+  const el = document.getElementById('timer');
+  if(!el) return;
+  const upd = ()=>{
+    const s = remainingSeconds(pid);
+    el.textContent = fmt(s);
+    el.classList.toggle('danger', s <= 60);
+    if(s <= 0){
+      clearInterval(tickHandle); tickHandle=null;
+      const p = PARTIES.find(x=>x.id===pid);
+      STATE.parties[pid].timeUp = true;
+      finishPart(p); render();
+    }
+  };
+  upd();
+  tickHandle = setInterval(upd, 1000);
+}
+
+/* ---- Saisie réponses ---- */
+function pick(idx){
+  const p = CURRENT, ps = STATE.parties[p.id], i = ps.qIndex;
+  const ans = ps.answers[i] || { tries:0, done:false, correct:false, picked:null };
+  if(ans.done) return;
+  ans.picked = idx; ps.answers[i]=ans; saveState();
+  document.querySelectorAll('#choices .choice').forEach((c,k)=>c.classList.toggle('selected',k===idx));
+  const vb = document.getElementById('vbtn'); if(vb) vb.disabled=false;
+}
+window.pick = pick;
+
+function validateQcm(){
+  const p = CURRENT, ps = STATE.parties[p.id], i = ps.qIndex, q = p.questions[i];
+  const ans = ps.answers[i]; if(!ans || ans.picked===null || ans.done) return;
+  ans.tries++;
+  const correct = (ans.picked===q.bonne);
+  if(correct || ans.tries>=2){ ans.done=true; ans.correct=correct; }
+  saveState(); renderQuestion(p);
+}
+window.validateQcm = validateQcm;
+
+function validateNum(){
+  const p = CURRENT, ps = STATE.parties[p.id], i = ps.qIndex, q = p.questions[i];
+  const ans = ps.answers[i] || { tries:0, done:false, correct:false, typed:"" };
+  if(ans.done) return;
+  const el = document.getElementById('numin');
+  const raw = (el? el.value : "").trim();
+  ans.typed = raw;
+  const val = parseNumber(raw);
+  ans.tries++;
+  const correct = (val!==null) && Math.abs(val - q.reponse) <= (q.tolerance||0);
+  if(correct || ans.tries>=2){ ans.done=true; ans.correct=correct; }
+  ps.answers[i]=ans; saveState(); renderQuestion(p);
+}
+window.validateNum = validateNum;
+
+function parseNumber(s){
+  if(!s) return null;
+  // accepte virgule décimale, espaces, et unités collées : on garde chiffres, signe, séparateur
+  let cleaned = s.replace(',', '.').replace(/[^0-9.\-]/g,'');
+  if(cleaned==="" || cleaned==="-" || cleaned===".") return null;
+  const v = parseFloat(cleaned);
+  return isNaN(v) ? null : v;
+}
+
+function next(){
+  const p = CURRENT, ps = STATE.parties[p.id];
+  if(ps.qIndex < p.questions.length-1){ ps.qIndex++; saveState(); renderQuestion(p); }
+  else{ finishPart(p); render(); }
+}
+window.next = next;
+
+function finishPart(p){
+  const ps = STATE.parties[p.id];
+  ps.finished = true; saveState();
+}
+
+function scorePartie(p){
+  const ps = STATE.parties[p.id];
+  let ok=0; const total=p.questions.length;
+  for(let i=0;i<total;i++){ if(ps.answers[i] && ps.answers[i].correct) ok++; }
+  return {ok,total};
+}
+
+/* ---- Bilan d'une partie ---- */
+function renderBilan(p){
+  const ps = STATE.parties[p.id];
+  const sc = scorePartie(p);
+  const pct = Math.round(sc.ok/sc.total*100);
+  let msg;
+  if(pct>=80) msg="Excellent — tu pars très bien armé·e pour la Première.";
+  else if(pct>=50) msg="Bon travail — quelques notions à revoir, relis les corrections.";
+  else msg="C'est un point de départ : reprends les explications « Comment raisonner ».";
+
+  let detail = p.questions.map((q,i)=>{
+    const a = ps.answers[i];
+    const state = a&&a.correct ? `<span style="color:var(--phosphor)">✓</span>`
+                  : `<span style="color:var(--red)">✗</span>`;
+    return `<div style="border-bottom:1px solid var(--line);padding:10px 0">
+        <div class="row" style="justify-content:space-between">
+          <span class="muted">Q${i+1}. ${state}</span>
+          <span class="muted">${a?("essais : "+a.tries):"non traitée"}</span>
+        </div>
+      </div>`;
+  }).join("");
+
+  app.innerHTML = topbar("Bilan — "+p.titre) + `
+    <div class="card" style="text-align:center">
+      <div class="eyebrow">${p.titre} ${ps.timeUp?"· temps écoulé":""}</div>
+      <div class="score-big">${sc.ok}/${sc.total}</div>
+      <p class="muted">soit ${pct}%</p>
+      <p>${msg}</p>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Détail</div>
+      ${detail}
+    </div>
+    <div class="card" id="sendCard">
+      <div class="eyebrow">Transmission à l'enseignant·e</div>
+      ${ ps.sent
+          ? `<p style="color:var(--phosphor)">✓ Résultats envoyés. Merci !</p>`
+          : ( FORM_CONFIG.endpoint
+              ? `<p class="muted" id="sendStatus">Envoi automatique de tes résultats…</p>
+                 <div id="sendMsg" class="hint-line"></div>
+                 <div class="row" id="sendRow" style="margin-top:10px;display:none">
+                   <button class="btn ghost" onclick="copyResults('${p.id}')">Copier mes résultats</button>
+                 </div>`
+              : `<p class="muted">Envoie ton score à ton enseignant·e (envoi en ligne non configuré).</p>
+                 <div class="row" style="margin-top:6px">
+                   <button class="btn ghost" onclick="copyResults('${p.id}')">Copier mes résultats</button>
+                 </div>
+                 <div id="sendMsg" class="hint-line"></div>` ) }
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button class="btn" onclick="backMenu()">← Retour au tableau de bord</button>
+    </div>`;
+
+  // Envoi automatique des résultats dès l'affichage du bilan (une seule fois).
+  if(FORM_CONFIG.endpoint && !ps.sent && !sending.has(p.id)){
+    sendResults(p.id);
+  }
+}
+function backMenu(){ CURRENT=null; render(); }
+window.backMenu = backMenu;
+
+/* ---- Envoi des résultats ---- */
+function buildSummary(p){
+  const ps = STATE.parties[p.id];
+  const sc = scorePartie(p);
+  const nom = STATE.eleve || "(sans nom)";
+  const details = p.questions.map((q,i)=>{
+    const a = ps.answers[i];
+    if(!a) return `Q${i+1}:—`;
+    return `Q${i+1}:${a.correct?"OK":"X"}(${a.tries}ess)`;
+  }).join(" ");
+  return { nom, section:p.titre, score:`${sc.ok}/${sc.total}`, details };
+}
+
+const sending = new Set(); // pids en cours d'envoi (évite les doublons)
+
+function sendResults(pid){
+  const p = partyById(pid), ps = STATE.parties[pid];
+  if(ps.sent || sending.has(pid)) return;
+  if(!FORM_CONFIG.endpoint) return;
+  sending.add(pid);
+  const s = buildSummary(p);
+
+  const body = new URLSearchParams();
+  body.append(FORM_CONFIG.fields.nom, s.nom);
+  body.append(FORM_CONFIG.fields.section, s.section);
+  body.append(FORM_CONFIG.fields.score, s.score);
+  body.append(FORM_CONFIG.fields.details, s.details);
+
+  // Google Forms accepte un POST « no-cors » : pas de confirmation lisible
+  // (réponse opaque), mais la soumission est bien enregistrée.
+  fetch(FORM_CONFIG.endpoint, { method:"POST", mode:"no-cors", body })
+    .then(()=>{ sending.delete(pid); ps.sent = true; saveState();
+                if(CURRENT && CURRENT.id===pid) renderBilan(p); })
+    .catch(()=>{ sending.delete(pid);
+                 const st=document.getElementById('sendStatus');
+                 const row=document.getElementById('sendRow');
+                 const msg=document.getElementById('sendMsg');
+                 if(st) st.textContent = "Envoi en ligne impossible (connexion ?).";
+                 if(msg) msg.textContent = "Utilise le bouton ci-dessous pour copier tes résultats et les transmettre.";
+                 if(row) row.style.display = "flex"; });
+}
+window.sendResults = sendResults;
+
+function copyResults(pid){
+  const p = partyById(pid);
+  const s = buildSummary(p);
+  const txt = `Nom : ${s.nom}\nSection : ${s.section}\nScore : ${s.score}\nDétails : ${s.details}`;
+  const msg = document.getElementById('sendMsg');
+  const ok = ()=>{ if(msg) msg.textContent = "Résultats copiés. Colle-les dans un message à ton enseignant·e."; };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(ok).catch(()=>fallbackCopy(txt,ok));
+  }else{ fallbackCopy(txt, ok); }
+}
+window.copyResults = copyResults;
+
+function fallbackCopy(txt, done){
+  const ta = document.createElement('textarea');
+  ta.value = txt;
+  ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;user-select:text;-webkit-user-select:text";
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{ document.execCommand('copy'); done(); }
+  catch(e){ const m=document.getElementById('sendMsg'); if(m) m.textContent="Copie impossible — note ton score manuellement : "+txt; }
+  document.body.removeChild(ta);
+}
+
+/* ---- Remise à zéro protégée par code ---- */
+function askReset(){
+  app.innerHTML = topbar("Recommencer") + `
+    <div class="card">
+      <div class="eyebrow">Accès enseignant</div>
+      <h2>Remettre l'activité à zéro</h2>
+      <p class="muted">Cette action efface toutes les réponses et relance les minuteurs.
+      Elle nécessite le <strong>code</strong> communiqué par l'enseignant·e.</p>
+      <div style="margin-top:14px">
+        <input type="text" id="codein" placeholder="Saisir le code…" autocomplete="off" style="max-width:280px"
+               onkeydown="if(event.key==='Enter')doReset()">
+      </div>
+      <div id="codemsg" class="hint-line"></div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn amber" onclick="doReset()">Valider le code</button>
+        <button class="btn ghost" onclick="backMenu()">Annuler</button>
+      </div>
+    </div>`;
+}
+window.askReset = askReset;
+function doReset(){
+  const v = (document.getElementById('codein').value||"").trim();
+  if(v === CODE_RESET){
+    hardReset(); CURRENT=null; render();
+  }else{
+    document.getElementById('codemsg').textContent = "Code incorrect. Réessaie ou demande le code à ton enseignant·e.";
+  }
+}
+window.doReset = doReset;
+
+/* ---- util ---- */
+function escapeHtml(s){ return (s||"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---- démarrage ---- */
+render();
+</script>
+</body>
+</html>
